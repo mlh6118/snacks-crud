@@ -13,5 +13,5 @@ N/A
 From the snacks-crud folder, run `python manage.py runserver`.
 
 ### Tests
-* Tests (when written) are run using `python manage.py tests` from the 
+* Tests are run using `python manage.py tests` from the 
   snacks folder.
