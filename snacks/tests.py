@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from snacks.models import Snack
+from http import HTTPStatus
 
 
 class SnacksTestPages(TestCase):
@@ -74,6 +75,7 @@ class SnacksTestPages(TestCase):
     """
     Test each element of a snack on each page.
     """
+
     def test_string_representation(self):
         self.assertEqual(str(self.snack), f'Reese\'s: \t\t Chocolate peanut '
                                           f'butter cups')
@@ -105,6 +107,7 @@ class FormTests(TestCase):
     """
     Test the forms.
     """
+
     def setUp(self) -> None:
         self.user = get_user_model().objects.create_user(
             username="tester", email="tester@email.com", password="pass")
@@ -131,10 +134,12 @@ class FormTests(TestCase):
         self.assertEqual(self.snack.purchaser.username, "tester")
 
 
-class ButtonTests(TestCase):
+class IntegrationTests(TestCase):
     """
-    Test the buttons on all pages.
+    Test the forms on all pages for posting.
+    Code guided by Joey Marianer.
     """
+
     def setUp(self) -> None:
         self.user = get_user_model().objects.create_user(
             username="tester", email="tester@email.com", password="pass")
@@ -142,5 +147,27 @@ class ButtonTests(TestCase):
             title="Reese's", description="Chocolate peanut butter cups",
             purchaser=self.user)
 
-    def test_snack_create_invalid_form_view(self):
-        pass
+    def test_form_create_fail(self):
+        response = self.client.post("/create/",
+                                    data={"title": "KitKat",
+                                          "purchaser": 1000,
+                                          "description": "Hello.  Sorry."})
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(
+            response, "Select a valid choice. That choice is not one of the "
+                      "available choices.", html=True
+        )
+
+    def test_form_create(self):
+        response = self.client.post("/create/",
+                                    data={"title": "KitKat",
+                                          "purchaser": 1,
+                                          "description": "Hello.  Sorry."})
+
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertTrue("Location" in response.headers)
+        self.assertEqual(response.headers["Location"], "/2/")
+        self.assertEqual(Snack.objects.get(id=2).title, "KitKat")
+
+
